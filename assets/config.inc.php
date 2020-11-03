@@ -23,9 +23,9 @@
 # Configuration
 #==============================================================================
 # LDAP
-$ldap_url = "ldap://localhost";
+$ldap_url = "ldaps://172.21.1.3";
 $ldap_starttls = false;
-$ldap_binddn = "cn=manager,dc=testdomain,dc=vht";
+$ldap_binddn = "cn=users,dc=testdomain,dc=vht";
 $ldap_bindpw = "secret";
 $ldap_base = "dc=testdomain,dc=vht";
 $ldap_login_attribute = "uid";
