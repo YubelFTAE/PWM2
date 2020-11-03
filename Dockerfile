@@ -1,21 +1,46 @@
-FROM tomcat:9
-EXPOSE 8080
+FROM alpine:3.6
+LABEL Maintainer="Matthias Engelhardt <matthias.engelhardt@accso.de>" \
+      Description="Lightweight container ltb-project"
 
-RUN apt-get update -y
-RUN apt-get install gettext-base apache2-utils -y
+EXPOSE 80
 
-ARG VERSION=1.9.1
-ARG BUILD='v1.9.1'
-ARG RELEASE_TYPE=release
+RUN apk --no-cache add \
+    php7 \
+    php7-fpm \
+    php7-xml \
+    php7-mbstring \
+    php7-mcrypt \
+    php7-ldap \
+    php7-session \
+    php7-iconv \
+    nginx \
+    supervisor \
+    curl \
+    ca-certificates
 
-ENV PWM_VERSION         ${VERSION}
-ENV PWM_APPLICATIONPATH /usr/local/pwm
-ENV CONFIG_XML_BASE64   'MIIDeTCCAmGgAwIBAgIQQpw4iVv455hKiMXwVOZELjANBgkqhkiG9w0BAQsFADBCMRMwEQYKCZImiZPyLGQBGRYDdmh0MRowGAYKCZImiZPyLGQBGRYKdGVzdGRvbWFpbjEPMA0GA1UEAxMGVkhULUNBMCAXDTIwMTAyOTA5MDM0NloYDzIxMTkxMDI5MDkxMzQ2WjBCMRMwEQYKCZImiZPyLGQBGRYDdmh0MRowGAYKCZImiZPyLGQBGRYKdGVzdGRvbWFpbjEPMA0GA1UEAxMGVkhULUNBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAre5mozrRmymZvrJ3ECmeXhPM+tZyOfwGqWHWqs1JFkm4FQ7dFPIHkKbHTAII033TTwdCpLNQYUc2vmuo92YGD7ddmnfMJaWzMhyAIPeZ1QvoiSfyEBa5uw7h8Zowcz+8TLrYA3byJnqGBSn4qB77FELCVuhUGZtqxYhYEK7EGPGO14B1cIWt+QYYdp6W/FcfOVXFt4kabZ2mzy17qWA8zrni1yQJ6dp36m8/bSzU6/dCF6QHM8H2jBiM5g8T/OzraJBtB8wM1N4KEiWrnen0uxpZLlV3lu6Gwk3Jz/k2nhRI7j2UeaJ70TxrB1s/H+GxySr4t8fCo+xssEXyyCtxHQIDAQABo2kwZzATBgkrBgEEAYI3FAIEBh4EAEMAQTAOBgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUQXw8PfpkeXGaf0T5yEGxspKFx+EwEAYJKwYBBAGCNxUBBAMCAQAwDQYJKoZIhvcNAQELBQADggEBAAVWqM6J1JJXPvxQh7M2j0XeXrOb6Neor+J9bvwIO5frwa5MipG6fcvw1TexRwlltfdLe+VxmO22wUGjUaT6shh1haXW35XGVorq1kkTgaE0sP0nMTQUwT0hDP2UwbJ8yW7E6IavKZKsiy2pJ2i8B511cxql0AUp4yLD2mHvcXw0AyJCUudS35vWSXLeVqeQIsN9HT6A8kRn3gnRbvKtdyCiitkrD1VOzbxYCprM+Pk/JJhkFkeZvHw6sDSFCjXAEkV2S/0XywUJ5NjBcRqoD4Bc2DgSLEzT6J6vjP75V/Kzarm9h86dgDCoT7TzHKQFoQ+6wWhauQqYzGanSySV5l8='
+# Configure nginx
+COPY assets/nginx.conf /etc/nginx/nginx.conf
 
-# COPY pwm-1.9.1.war "${CATALINA_HOME}/webapps/ROOT.war"
-RUN curl -f https://www.pwm-project.org/artifacts/pwm/${RELEASE_TYPE}/${BUILD}/pwm-${VERSION}.war -o "${CATALINA_HOME}/webapps/ROOT.war"
-RUN mkdir -p "${PWM_APPLICATIONPATH}/logs"
-RUN echo 'Initializing PWM...' > "${PWM_APPLICATIONPATH}/logs/PWM.log"
-COPY startup.sh .
-RUN ["chmod", "+x", "./startup.sh"]
-CMD ["./startup.sh"]
+# Configure PHP-FPM
+COPY assets/fpm-pool.conf /etc/php7/php-fpm.d/z_custom_fpm-pool.conf
+COPY assets/php.ini /etc/php7/conf.d/z_custom_php.ini
+
+# Configure supervisord
+COPY assets/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+ENV LTB_PROJECT_VERSION 1.0
+ENV LTB_PROJECT_SHA256 2666e164f12f3e2f2bd08d7c580ac17d1474ec503e66d8025e0ffeeb4a1eab7e
+
+# Download ltb-project self-service password
+RUN curl -s -L -o self-service-password.tar.gz https://github.com/ltb-project/self-service-password/archive/v1.0.tar.gz && \
+    echo "${LTB_PROJECT_SHA256}  self-service-password.tar.gz" | sha256sum -c '-'
+
+# Install ltb-project
+RUN mkdir -p /var/www/html && \
+    tar zxf self-service-password.tar.gz --strip 1 -C /var/www/html && \
+    rm self-service-password.tar.gz
+
+# add default config file
+COPY assets/config.inc.php /var/www/html/conf/config.inc.php
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

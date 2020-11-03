@@ -1,29 +1,52 @@
-# PWM - Password Manager
+# LDAP Tool Box Self Service Password with Docker
 
-Configurable Docker image for [pwm](https://github.com/pwm-project/pwm) - an open-source password self-service application.
+A lightweight Self Service Password Docker image built from source atop [Alpine Linux](https://store.docker.com/images/alpine).
 
-## Build/Run
-To build and run the image:
-```shell script
-docker build -t pwm .
-docker run --rm -e "CONFIG_XML_BASE64=$(cat PwmConfiguration.xml.tpl | base64)" pwm
+Self Service Password is a PHP application that allows users to change their password in an LDAP directory. See http://ltb-project.org/wiki/documentation/self-service-password.
+
+## How to use this image
+
+The easiest way is to create your own configuration file and modify it according to your settings. Download the latest version of the `config.inc.php` file from https://github.com/ltb-project/self-service-password/tree/master/conf/config.inc.php.
+
+```
+$ docker run -d \
+         -p 8080:80 \
+         -v config.inc.php:/var/www/html/conf/config.inc.php \
+         --name ltb \
+         engelhardtm/docker-self-service-password:latest
 ```
 
-## Arguments/Environment
-* `CONFIG_XML_BASE64` - Use this environment variable to inject a base64-encoded PwmConfiguration.xml file. 
-Any references to other environment variables within the XML will also be substituted at startup.
-Default:
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<PwmConfiguration pwmVersion="${PWM_VERSION}" xmlVersion="4" createTime="1970-01-01T00:00:00Z">
-  <properties type="config">
-    <property key="saveConfigOnStart">true</property>
-  </properties>
-  <settings>
-    <setting key="pwm.securityKey" syntax="PASSWORD">
-      <label>Security Key</label>
-      <value plaintext="true">12345678901234567890123456789012</value>
-    </setting>
-  </settings>
-</PwmConfiguration>
+For docker-compose use this snippet:
 ```
+  ltb:
+    image: engelhardtm/docker-self-service-password:latest
+    container_name: ltb
+    ports:
+      - 8080:80
+    volumes:
+      - config.inc.php:/var/www/html/conf/config.inc.php
+```
+
+
+## Modify the image
+
+You can build your own Image with your `config.inc.php` settings:
+
+```
+FROM engelhardtm/docker-self-service-password
+COPY config.inc.php:/var/www/html/conf/config.inc.php
+```
+
+## Building the image yourself
+
+```
+git clone https://github.com/engelhardtm/docker-self-service-password.git
+cd docker-self-service-password
+docker build -t docker-self-service-password .
+```
+
+Don't forget to edit the configuration file `assets/config.inc.php`
+
+## Documentation for LTB Self-Service-Password
+
+Documentation is available on http://ltb-project.org/wiki/documentation/self-service-password
