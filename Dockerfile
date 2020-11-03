@@ -16,6 +16,6 @@ ENV CONFIG_XML_BASE64   'MIIDeTCCAmGgAwIBAgIQQpw4iVv455hKiMXwVOZELjANBgkqhkiG9w0
 RUN curl -f https://www.pwm-project.org/artifacts/pwm/${RELEASE_TYPE}/${BUILD}/pwm-${VERSION}.war -o "${CATALINA_HOME}/webapps/ROOT.war"
 RUN mkdir -p "${PWM_APPLICATIONPATH}/logs"
 RUN echo 'Initializing PWM...' > "${PWM_APPLICATIONPATH}/logs/PWM.log"
-RUN ["chmod", "+x", "./startup.sh"]
 COPY startup.sh .
+RUN ["chmod", "+x", "./startup.sh"]
 CMD ["./startup.sh"]
