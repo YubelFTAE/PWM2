@@ -1,52 +1,37 @@
-# LDAP Tool Box Self Service Password with Docker
+# pwm
+Lightweight and updated PWM Password Manager container. This container uses the onejar version of the PWM Project. 
+Any questions about the PWM Project should be search [here](https://github.com/pwm-project/pwm).
 
-A lightweight Self Service Password Docker image built from source atop [Alpine Linux](https://store.docker.com/images/alpine).
+## How to use
 
-Self Service Password is a PHP application that allows users to change their password in an LDAP directory. See http://ltb-project.org/wiki/documentation/self-service-password.
-
-## How to use this image
-
-The easiest way is to create your own configuration file and modify it according to your settings. Download the latest version of the `config.inc.php` file from https://github.com/ltb-project/self-service-password/tree/master/conf/config.inc.php.
-
-```
-$ docker run -d \
-         -p 8080:80 \
-         -v config.inc.php:/var/www/html/conf/config.inc.php \
-         --name ltb \
-         engelhardtm/docker-self-service-password:latest
+```bash
+docker run --name pwm \
+           -p 8443:8443 \
+           -v /etc/localtime:/etc/localtime \
+           -v ./config:/config \
+           -d lucasdiedrich/pwm
 ```
 
-For docker-compose use this snippet:
-```
-  ltb:
-    image: engelhardtm/docker-self-service-password:latest
-    container_name: ltb
-    ports:
-      - 8080:80
-    volumes:
-      - config.inc.php:/var/www/html/conf/config.inc.php
-```
+## Special Volumes
 
+|  Volume  | Info |
+|:------:|:-------:|
+| /config  | All config files used by PWM|
+| /etc/localtime  | To set container clock as the host clock |
 
-## Modify the image
+## LIBS Version
 
-You can build your own Image with your `config.inc.php` settings:
+These are the version of the package used by the container.
 
-```
-FROM engelhardtm/docker-self-service-password
-COPY config.inc.php:/var/www/html/conf/config.inc.php
-```
+|  NAME  | Info | 
+|:------:|:-------:|
+|   PWM Version  | pwm-onejar-2.0.0-SNAPSHOT.jar |
+|   RELEASE_DATE |  2020-03-19T20_16_30Z | 
 
-## Building the image yourself
+## References
 
-```
-git clone https://github.com/engelhardtm/docker-self-service-password.git
-cd docker-self-service-password
-docker build -t docker-self-service-password .
-```
+This project contains part of code taken or similar from [fjudith container Dockerfile](https://hub.docker.com/r/fjudith/pwm/dockerfile).
 
-Don't forget to edit the configuration file `assets/config.inc.php`
+## License
 
-## Documentation for LTB Self-Service-Password
-
-Documentation is available on http://ltb-project.org/wiki/documentation/self-service-password
+MIT © [Lucas Diedrich](https://github.com/lucasdiedrich)
